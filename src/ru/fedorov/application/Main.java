@@ -1,16 +1,16 @@
 package ru.fedorov.application;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
+import java.util.TreeSet;
 
 
 public class Main {
+    private final MyComparator comparator = new MyComparator();
     private final Start START = new Start();
 
     public static void main(String[] args) {
@@ -48,11 +48,11 @@ public class Main {
         private final Work work = new Work();
 
         public void start() {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-                final String quantityResponseString = reader.readLine().trim();
+            try (Scanner sc = new Scanner(System.in)) {
+                final String quantityResponseString = sc.nextLine().trim();
                 final int quantityResponse = Integer.parseInt(quantityResponseString);
                 for (int i = 0; i < quantityResponse; i++) {
-                    final String input = reader.readLine().trim();
+                    final String input = sc.nextLine().trim();
                     String output = work.work(input);
                     if (i != quantityResponse - 1) {
                         output += "\n=====";
@@ -63,7 +63,7 @@ public class Main {
                     }
                 }
                 return;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             throw new RuntimeException();
@@ -72,7 +72,7 @@ public class Main {
 
     class Work {
         private final InputDataToDataConverter inputDataToDataConverter = new InputDataToDataConverter();
-        private final Map<String, LinkedHashSet<String>> keywordToSiteHosts = new HashMap<>();
+        private final Map<String, TreeSet<String>> keywordToSiteHosts = new HashMap<>();
 
         public String work(String inputData) {
             final Data data = inputDataToDataConverter.convert(inputData);
@@ -99,7 +99,7 @@ public class Main {
         private String getAddResult(Data data) {
             final String keyword = data.getKeyword();
             final String siteHost = data.getSiteHost();
-            final boolean isSuccessAction = keywordToSiteHosts.computeIfAbsent(keyword, (u) -> new LinkedHashSet<>()).add(siteHost);
+            final boolean isSuccessAction = keywordToSiteHosts.computeIfAbsent(keyword, (u) -> new TreeSet<>(comparator)).add(siteHost);
             return isSuccessAction ? "OK" : "Already exists";
         }
 
@@ -116,7 +116,7 @@ public class Main {
 
         private String getSearchResult(Data data) {
             final String keyword = data.getKeyword();
-            final Set<String> siteHosts = keywordToSiteHosts.getOrDefault(keyword, new LinkedHashSet<>());
+            final Set<String> siteHosts = keywordToSiteHosts.getOrDefault(keyword, new TreeSet<>(comparator));
             StringBuilder result = new StringBuilder("Results: ");
             result.append(siteHosts.size());
             result.append(" site(s) found");
@@ -126,6 +126,9 @@ public class Main {
                 result.append(++siteCount);
                 result.append(") ");
                 result.append(siteHost);
+                if (siteCount == 10) {
+                    break;
+                }
             }
             return result.toString();
         }
@@ -181,6 +184,19 @@ public class Main {
 
         public String getSiteHost() {
             return siteHost;
+        }
+    }
+
+    class MyComparator implements Comparator<String> {
+        @Override
+        public int compare(String o1, String o2) {
+            return o1.compareTo(o2);
+        }
+
+        private String getOrdinalString(String s) {
+            char[] a = s.toCharArray();
+            Arrays.sort(a);
+            return new String(a);
         }
     }
 }
